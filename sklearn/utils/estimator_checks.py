@@ -1457,6 +1457,7 @@ def check_parameters_default_constructible(name, Estimator):
             # true for mixins
             return
         params = estimator.get_params()
+        estimator.set_params(**params)
         if name in META_ESTIMATORS:
             # they can need a non-default argument
             init_params = init_params[1:]

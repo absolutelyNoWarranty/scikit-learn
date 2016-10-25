@@ -28,6 +28,15 @@ class BaseBadClassifier(BaseEstimator, ClassifierMixin):
         return np.ones(X.shape[0])
 
 
+class NoSetter(BaseBadClassifier):
+    def __init__(self, p=None):
+        self._p = p
+
+    @property
+    def p(self):
+        return self._p
+
+
 class NoCheckinPredict(BaseBadClassifier):
     def fit(self, X, y):
         X, y = check_X_y(X, y)
@@ -66,6 +75,9 @@ def test_check_estimator():
     # check that we have a set_params and can clone
     msg = "it does not implement a 'get_params' methods"
     assert_raises_regex(TypeError, msg, check_estimator, object)
+    # check that properties can be set
+    msg = "can't set attribute"
+    assert_raises_regex(AttributeError, msg, check_estimator, NoSetter)
     # check that we have a fit method
     msg = "object has no attribute 'fit'"
     assert_raises_regex(AttributeError, msg, check_estimator, BaseEstimator)
