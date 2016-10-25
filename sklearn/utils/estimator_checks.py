@@ -19,6 +19,7 @@ from sklearn.utils.testing import assert_raise_message
 from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_not_equal
 from sklearn.utils.testing import assert_true
+from sklearn.utils.testing import assert_false
 from sklearn.utils.testing import assert_in
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import assert_array_almost_equal
@@ -249,6 +250,7 @@ def check_estimator(Estimator):
     """
     name = Estimator.__name__
     check_parameters_default_constructible(name, Estimator)
+    check_parameters_not_properties(Estimator)
     for check in _yield_all_checks(name, Estimator):
         check(name, Estimator)
 
@@ -1478,6 +1480,14 @@ def check_parameters_default_constructible(name, Estimator):
                 assert_array_equal(param_value, init_param.default)
             else:
                 assert_equal(param_value, init_param.default)
+
+
+def check_parameters_not_properties(Estimator):
+    for name in Estimator._get_param_names():
+        assert_false(hasattr(Estimator, name),
+                     "Estimator %s has a class attribute with the same"
+                     " name as parameter %s"
+                     % (Estimator.__name__, name))
 
 
 def multioutput_estimator_convert_y_2d(name, y):
