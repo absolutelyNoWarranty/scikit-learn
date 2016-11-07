@@ -30,11 +30,34 @@ class BaseBadClassifier(BaseEstimator, ClassifierMixin):
 
 class NoSetter(BaseBadClassifier):
     def __init__(self, p=None):
-        self._p = p
+        self.p = p
 
     @property
     def p(self):
         return self._p
+
+
+class NonInvertibleSetter(BaseBadClassifier):
+    def __init__(self, p=0):
+        self.p = p
+
+    @property
+    def p(self):
+        if self._p == 0:
+            return self._p
+        return self._p + 1 
+
+    @p.setter
+    def p(self, value):
+        self._p = value 
+    
+    def fit(self, X, y):
+        X, y = check_X_y(X, y)
+        return self
+
+    def predict(self, X):
+        X = check_array(X)
+        return np.ones(X.shape[0])
 
 
 class NoCheckinPredict(BaseBadClassifier):
@@ -77,7 +100,9 @@ def test_check_estimator():
     assert_raises_regex(TypeError, msg, check_estimator, object)
     # check that properties can be set
     msg = "can't set attribute"
-    assert_raises_regex(AttributeError, msg, check_estimator, NoSetter)
+    #assert_raises_regex(AttributeError, msg, check_estimator, NoSetter)
+    #check_estimator(NoSetter)
+    check_estimator(NonInvertibleSetter)
     # check that we have a fit method
     msg = "object has no attribute 'fit'"
     assert_raises_regex(AttributeError, msg, check_estimator, BaseEstimator)

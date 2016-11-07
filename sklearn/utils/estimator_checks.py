@@ -249,6 +249,7 @@ def check_estimator(Estimator):
     """
     name = Estimator.__name__
     check_parameters_default_constructible(name, Estimator)
+    check_init_and_set_parameters_equivalent(name, Estimator)
     for check in _yield_all_checks(name, Estimator):
         check(name, Estimator)
 
@@ -1457,7 +1458,6 @@ def check_parameters_default_constructible(name, Estimator):
             # true for mixins
             return
         params = estimator.get_params()
-        estimator.set_params(**params)
         if name in META_ESTIMATORS:
             # they can need a non-default argument
             init_params = init_params[1:]
@@ -1480,6 +1480,57 @@ def check_parameters_default_constructible(name, Estimator):
             else:
                 assert_equal(param_value, init_param.default)
 
+
+def check_init_and_set_parameters_equivalent(name, Estimator):
+    # Check that get_params() returns the same thing
+    # before and after set_params()
+
+    classifier = LinearDiscriminantAnalysis()
+    values = [-np.inf, np.inf, None, -100, 100, -0.5, 0.5, 0, "", "value", ('a', 'b'), {'key':'value'}]
+
+    with ignore_warnings(category=DeprecationWarning):
+        if name in META_ESTIMATORS:
+            estimator = Estimator(classifier)
+        else:
+            estimator = Estimator()
+
+        params = estimator.get_params()
+
+        for param_name in params.keys():
+            for value in values:
+                _params = dict(params)
+                _params[param_name] = value
+                print(_params)
+
+                # First assert that if init succeeds
+                # then set_params should also succeed
+                try:
+                    estimator1 = Estimator(**_params)
+                except Exception as e:
+                    print e
+                    try:
+                        estimator2 = Estimator()
+                        estimator2.set_params(**_params)
+                    except:
+                        pass
+                    else:
+                        raise Exception("__init__ failed but set_params succeeded")
+                else:
+                    try:
+                        estimator2 = Estimator()
+                        estimator2.set_params(**_params)
+                    except:
+                        raise Exception("set_params failed but __init__ succeeded")
+                    else:
+                        # OK: Both __init__ and set_params succeeded
+                        pass
+                    
+                    #e1_get_params = estimator1.get_params()
+                    #e2_get_params = estimator2.get_params()
+                    #assert_equal(e1_get_params, e2_get_params)
+                    #assert_equal(str(estimator1), str(estimator2))
+                                 #"Setting parameter %s of estimator %s with value %s results in get_param with values %s but setting%s does not result in. (Got %s instead)." % (param_name, name, value, first_time_value, first_time_value, second_time_value))
+                
 
 def multioutput_estimator_convert_y_2d(name, y):
     # Estimators in mono_output_task_error raise ValueError if y is of 1-D
